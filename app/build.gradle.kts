@@ -2,11 +2,12 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "com.aidan.musinsa"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.aidan.musinsa"
@@ -49,6 +50,39 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    
+    // Retrofit for network
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.moshi)
+    implementation(libs.okhttp.logging)
+    
+    // Moshi for JSON parsing
+    implementation(libs.moshi.kotlin)
+    implementation(libs.moshi.adapters)
+    
+    // Coil for image loading
+    implementation(libs.coil.compose)
+    
+    // Mavericks for MVI
+    implementation(libs.mavericks.core)
+    implementation(libs.mavericks.compose)
+    implementation(libs.mavericks.navigation)
+    
+    // Navigation
+    implementation(libs.navigation.compose)
+    
+    // Kotlin Coroutines
+    implementation(libs.kotlinx.coroutines.core)
+    implementation(libs.kotlinx.coroutines.android)
+    
+    // Kotlinx Serialization
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit.kotlinx.serialization)
+    
+    // Koin for dependency injection
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
+    
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
