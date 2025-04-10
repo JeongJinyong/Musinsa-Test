@@ -26,11 +26,13 @@ data class ContentItem(
  */
 @Serializable
 data class Content(
-    @SerialName("type") val type: String,
+    @SerialName("type") val typeString: String,
     @SerialName("banners") val banners: List<Banner> = emptyList(),
     @SerialName("goods") val goods: List<Good> = emptyList(),
     @SerialName("styles") val styles: List<Style> = emptyList()
-)
+) {
+    val type: ContentType get() = ContentType.fromString(typeString)
+}
 
 /**
  * 배너 모델
@@ -83,23 +85,8 @@ data class Header(
 data class Footer(
     @SerialName("title") val title: String,
     @SerialName("iconURL") val iconURL: String? = null,
-    @SerialName("type") val type: String
-)
-
-/**
- * Content 타입 상수
- */
-object ContentType {
-    const val BANNER = "BANNER"
-    const val GRID = "GRID"
-    const val SCROLL = "SCROLL"
-    const val STYLE = "STYLE"
+    @SerialName("type") val typeString: String
+) {
+    val type: FooterType get() = FooterType.fromString(typeString)
 }
 
-/**
- * Footer 타입 상수
- */
-object FooterType {
-    const val REFRESH = "REFRESH"
-    const val MORE = "MORE"
-}
