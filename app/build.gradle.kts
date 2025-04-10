@@ -38,10 +38,17 @@ android {
     buildFeatures {
         compose = true
     }
+    
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
 }
 
 dependencies {
-
+    // AndroidX 및 Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -50,40 +57,45 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.navigation.compose)
     
-    // Retrofit for network
+    // 네트워크
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.moshi)
     implementation(libs.okhttp.logging)
+    implementation(libs.retrofit.kotlinx.serialization)
     
-    // Moshi for JSON parsing
+    // JSON 파싱
     implementation(libs.moshi.kotlin)
     implementation(libs.moshi.adapters)
+    implementation(libs.kotlinx.serialization.json)
     
-    // Coil for image loading
+    // 이미지 로딩
     implementation(libs.coil.compose)
     
-    // Mavericks for MVI
+    // MVI 아키텍처
     implementation(libs.mavericks.core)
     implementation(libs.mavericks.compose)
     implementation(libs.mavericks.navigation)
     
-    // Navigation
-    implementation(libs.navigation.compose)
-    
-    // Kotlin Coroutines
+    // 코루틴
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     
-    // Kotlinx Serialization
-    implementation(libs.kotlinx.serialization.json)
-    implementation(libs.retrofit.kotlinx.serialization)
-    
-    // Koin for dependency injection
+    // 의존성 주입
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     
+    // 테스트 의존성
     testImplementation(libs.junit)
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.kotlin.test.junit)
+    testImplementation(libs.mockk)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mavericks.testing)
+    testImplementation(libs.robolectric)
+    
+    // 안드로이드 테스트
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
