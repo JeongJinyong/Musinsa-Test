@@ -18,28 +18,32 @@ import com.aidan.musinsa.ui.theme.MusinsaTestTheme
  *
  * @param footer Footer 모델 객체
  * @param onFooterClick 푸터 클릭 이벤트 핸들러
+ * @param canExpand 더보기 가능 여부
  */
 @Composable
 fun FooterSection(
     footer: Footer,
-    onFooterClick: () -> Unit = {}
+    onFooterClick: () -> Unit = {},
+    canExpand: Boolean = true
 ) {
-    
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-            .background(Color.LightGray.copy(alpha = 0.2f))
-    ) {
-        ContentFooter(
-            title = when (footer.type) {
-                 FooterType.REFRESH -> footer.title.ifEmpty { "새로운 추천" }
-                FooterType.MORE -> footer.title.ifEmpty { "더보기" }
-                FooterType.UNKNOWN -> footer.title
-            },
-            iconUrl = footer.iconURL,
-            onClick = onFooterClick
-        )
+    if (footer.type != FooterType.UNKNOWN && 
+        (footer.type == FooterType.REFRESH || (footer.type == FooterType.MORE && canExpand))) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
+                .background(Color.LightGray.copy(alpha = 0.2f))
+        ) {
+            ContentFooter(
+                title = when (footer.type) {
+                    FooterType.REFRESH -> footer.title.ifEmpty { "새로운 추천" }
+                    FooterType.MORE -> footer.title.ifEmpty { "더보기" }
+                    FooterType.UNKNOWN -> footer.title
+                },
+                iconUrl = footer.iconURL,
+                onClick = onFooterClick
+            )
+        }
     }
 }
 
@@ -64,7 +68,22 @@ fun FooterSectionPreview_More() {
             footer = Footer(
                 title = "더보기",
                 typeString = "MORE"
-            )
+            ),
+            canExpand = true
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun FooterSectionPreview_More_Disabled() {
+    MusinsaTestTheme {
+        FooterSection(
+            footer = Footer(
+                title = "더보기",
+                typeString = "MORE"
+            ),
+            canExpand = false
         )
     }
 }
