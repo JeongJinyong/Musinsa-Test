@@ -36,7 +36,28 @@ class HomeViewModel(
         viewModelScope.launch {
             contentRepository.getContents()
                 .execute { contentItemsFlow ->
-                    copy(contentItems = contentItemsFlow)
+                    // 각 콘텐츠의 총 행 수 계산
+                    val displayedLines = contentItemsFlow.invoke()?.mapIndexed { index, contentItem ->
+                        val content = contentItem.contents
+                        index to when(content?.type) {
+                            ContentType.BANNER -> 1 // 배너는 항상 1행
+                            ContentType.GRID -> {
+                                val totalGoods = content.goods.size
+                                minOf((totalGoods + 2) / 3, 2) // 3개씩 표시, 최대 2행
+                            }
+                            ContentType.SCROLL -> 1 // 스크롤은 1행만 표시
+                            ContentType.STYLE -> {
+                                val totalStyles = content.styles.size
+                                minOf((totalStyles + 2) / 3, 2) // 3개씩 표시, 최대 2행
+                            }
+                            else -> 1
+                        }
+                    }?.toMap() ?: emptyMap()
+
+                    copy(
+                        contentItems = contentItemsFlow,
+                        displayedLines = displayedLines
+                    )
                 }
         }
     }
@@ -94,11 +115,33 @@ class HomeViewModel(
      */
     fun expandContent(contentIndex: Int) {
         withState { state ->
-            val currentExpandedLines = state.getExpandedLines(contentIndex)
-            val newExpandedLines = currentExpandedLines + 1
+            val contentItems = state.contentItems.invoke() ?: return@withState
+            val content = contentItems[contentIndex].contents ?: return@withState
+            
+            // 전체 행 수 계산
+            val totalLines = when(content.type) {
+                ContentType.GRID -> {
+                    val totalGoods = content.goods.size
+                    (totalGoods + 2) / 3
+                }
+                ContentType.STYLE -> {
+                    val totalStyles = content.styles.size
+                    (totalStyles + 2) / 3
+                }
+                else -> 1
+            }
+
+            // 더 이상 표시할 행이 없으면 무시
+            if (!state.canLoadMore(contentIndex, totalLines)) return@withState
+
+            val currentDisplayedLines = state.getDisplayedLines(contentIndex)
+            val newDisplayedLines = currentDisplayedLines + 1
             
             setState { 
-                copy(expandedContents = expandedContents + (contentIndex to newExpandedLines))
+                copy(
+                    displayedLines = displayedLines + (contentIndex to newDisplayedLines),
+                    expandedContents = expandedContents + (contentIndex to (expandedContents[contentIndex] ?: 0) + 1)
+                )
             }
         }
     }
