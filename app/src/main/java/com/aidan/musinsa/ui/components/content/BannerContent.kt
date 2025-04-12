@@ -1,33 +1,26 @@
 package com.aidan.musinsa.ui.components.content
 
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,9 +33,9 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.aidan.musinsa.data.model.Banner
 import com.aidan.musinsa.ui.theme.MusinsaTestTheme
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 
 /**
  * 배너 아이템 컴포넌트
@@ -55,67 +48,63 @@ fun BannerItem(
     banner: Banner,
     onClick: (String) -> Unit = {}
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(16f / 9f)
             .clickable { onClick(banner.linkURL) },
-        shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
-        Box {
-            // 배너 이미지
-            AsyncImage(
-                model = banner.thumbnailURL,
-                contentDescription = banner.title,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxWidth()
-            )
+        // 배너 이미지
+        AsyncImage(
+            model = banner.thumbnailURL,
+            contentDescription = banner.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            // 제목, 설명, 키워드 부분
-            if (banner.title.isNotEmpty() || banner.description.isNotEmpty() || banner.keyword.isNotEmpty()) {
-                Column(
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(16.dp)
-                ) {
-                    // 키워드가 있는 경우
-                    if (banner.keyword.isNotEmpty()) {
-                        Text(
-                            text = banner.keyword,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Color.White,
-                            modifier = Modifier
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(Color.DarkGray.copy(alpha = 0.7f))
-                                .padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
+        // 제목, 설명, 키워드 부분
+        if (banner.title.isNotEmpty() || banner.description.isNotEmpty() || banner.keyword.isNotEmpty()) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
+            ) {
+                // 키워드가 있는 경우
+                if (banner.keyword.isNotEmpty()) {
+                    Text(
+                        text = banner.keyword,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(4.dp))
+                            .background(Color.DarkGray.copy(alpha = 0.7f))
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
-                    // 제목이 있는 경우
-                    if (banner.title.isNotEmpty()) {
-                        Text(
-                            text = banner.title,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                // 제목이 있는 경우
+                if (banner.title.isNotEmpty()) {
+                    Text(
+                        text = banner.title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
-                    // 설명이 있는 경우
-                    if (banner.description.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = banner.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
+                // 설명이 있는 경우
+                if (banner.description.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = banner.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }
@@ -163,51 +152,80 @@ fun BannerContent(
 ) {
     if (banners.isEmpty()) return
 
-    val virtualPageCount = Int.MAX_VALUE
-    val initialPage = (virtualPageCount / 2) - ((virtualPageCount / 2) % banners.size)
-    
-    val pagerState = rememberPagerState(initialPage = initialPage) { virtualPageCount }
+    val pageCount = banners.size
+    val infinitePageCount = 10000
 
-    val currentPage by remember {
-        derivedStateOf {
-            (pagerState.currentPage % banners.size) + 1
+    val actualPageCount = if (pageCount > 1) infinitePageCount else 1
+
+    val initialPage = if (pageCount > 1) (infinitePageCount / 2) - ((infinitePageCount / 2) % pageCount) else 0
+
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { actualPageCount }
+    )
+
+    val isDragged by pagerState.interactionSource.collectIsDraggedAsState()
+
+    val currentRealPage = remember(pagerState.currentPage) {
+        (pagerState.currentPage % pageCount) + 1
+    }
+
+    LaunchedEffect(pagerState.currentPage) {
+        if (pagerState.currentPage < initialPage / 4 || pagerState.currentPage > initialPage * 1.75) {
+            val targetPage = initialPage + (pagerState.currentPage % pageCount)
+            pagerState.scrollToPage(targetPage)
         }
     }
-    
-    // 자동 슬라이드 효과
-    if (banners.size > 1) {
-        LaunchedEffect(pagerState) {
-            while (true) {
-                delay(3000)
-                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+
+    if (pageCount > 1) {
+        LaunchedEffect(key1 = Unit) {
+            try {
+                while (true) {
+                    delay(3000)
+                    if (!isDragged && isActive) {
+                        val nextPage = pagerState.currentPage + 1
+                        if (nextPage < actualPageCount) {
+                            pagerState.animateScrollToPage(
+                                page = nextPage,
+                                animationSpec = tween(durationMillis = 800)
+                            )
+                        } else {
+                            pagerState.scrollToPage(initialPage + (pagerState.currentPage % pageCount))
+                        }
+                    }
+                }
+            } catch (e: CancellationException) {
+                // 코루틴 취소 처리 (의도적인 취소를 무시하지 않음)
             }
         }
     }
 
-    Box {
-        // 배너 페이저
+    Box(
+        modifier = Modifier.fillMaxWidth(),
+        contentAlignment = Alignment.BottomEnd
+    ) {
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            beyondBoundsPageCount = 1,
+            userScrollEnabled = pageCount > 1
         ) { virtualPage ->
-            // 실제 배너 인덱스 계산
-            val realIndex = virtualPage % banners.size
+            val realIndex = virtualPage % pageCount
             BannerItem(
                 banner = banners[realIndex],
                 onClick = onBannerClick
             )
         }
 
-        // 인디케이터 (배너가 2개 이상인 경우에만 표시)
-        if (banners.size > 1) {
+        if (pageCount > 1) {
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(16.dp)
             ) {
                 BannerPagerIndicator(
-                    totalCount = banners.size,
-                    currentPage = currentPage
+                    totalCount = pageCount,
+                    currentPage = currentRealPage
                 )
             }
         }
@@ -219,19 +237,36 @@ fun BannerContent(
 fun BannerContentPreview() {
     MusinsaTestTheme {
         BannerContent(
-            banners = List(5) { index ->
+            banners = listOf(
                 Banner(
-                    linkURL = "https://example.com/banner$index",
-                    thumbnailURL = "https://via.placeholder.com/400x225",
-                    title = "배너 제목 ${index + 1}",
-                    description = "배너 ${index + 1}의 설명 텍스트입니다. 세부 내용이 여기에 표시됩니다.",
-                    keyword = when (index % 3) {
-                        0 -> "세일"
-                        1 -> "단독세일"
-                        else -> "한정세일"
-                    }
+                    linkURL = "https://www.musinsa.com/app/campaign/index/junebeautyfull",
+                    thumbnailURL = "https://image.msscdn.net/images/event_banner/2022061009432800000059650.jpg",
+                    title = "",
+                    description = "",
+                    keyword = ""
+                ),
+                Banner(
+                    linkURL = "https://www.musinsa.com/app/plan/views/22278",
+                    thumbnailURL = "https://image.msscdn.net/images/event_banner/2022062311154900000044053.jpg",
+                    title = "하이드아웃 S/S 시즌오프",
+                    description = "최대 30% 할인",
+                    keyword = "세일"
+                ),
+                Banner(
+                    linkURL = "https://www.musinsa.com/app/plan/views/22189",
+                    thumbnailURL = "https://image.msscdn.net/images/event_banner/2022062311154700000070083.jpg",
+                    title = "오끌레르 22 서머 컬렉션 발매",
+                    description = "최대 20% 할인",
+                    keyword = "발매"
+                ),
+                Banner(
+                    linkURL = "https://www.musinsa.com/app/plan/views/21902",
+                    thumbnailURL = "https://image.msscdn.net/images/event_banner/2022062211345700000040311.jpg",
+                    title = "COOL한 여름을 위한 냉감 아이템",
+                    description = "최대 54% 할인",
+                    keyword = "무신사 추천"
                 )
-            }
+            )
         )
     }
 }

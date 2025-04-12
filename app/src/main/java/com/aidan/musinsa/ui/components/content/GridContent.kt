@@ -5,18 +5,14 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,13 +39,13 @@ import com.aidan.musinsa.ui.theme.MusinsaTestTheme
 @Composable
 fun GoodItem(
     good: Good,
-    onClick: (String) -> Unit = {}
+    onClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .clickable { onClick(good.linkURL) }
-            .padding(8.dp)
+            .padding(4.dp)
     ) {
         // 상품 이미지 (브랜드명과 쿠폰 오버레이)
         Box(
@@ -58,27 +54,23 @@ fun GoodItem(
                 .aspectRatio(1f)
         ) {
             // 상품 이미지
-            Card(
-                modifier = Modifier.fillMaxSize(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                AsyncImage(
-                    model = good.thumbnailURL,
-                    contentDescription = good.brandName,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+            AsyncImage(
+                model = good.thumbnailURL,
+                contentDescription = good.brandName,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(4.dp))
+            )
 
             // 브랜드명 (왼쪽 하단 오버레이)
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
-                    .padding(8.dp)
+                    .padding(4.dp)
                     .clip(RoundedCornerShape(4.dp))
                     .background(Color.Black.copy(alpha = 0.7f))
-                    .padding(horizontal = 8.dp, vertical = 4.dp)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
             ) {
                 Text(
                     text = good.brandName,
@@ -94,10 +86,10 @@ fun GoodItem(
                 Box(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(8.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .padding(4.dp)
+                        .clip(RoundedCornerShape(4.dp))
                         .background(MaterialTheme.colorScheme.primary)
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                        .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
                     Text(
                         text = "쿠폰",
@@ -108,7 +100,7 @@ fun GoodItem(
             }
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(4.dp))
 
         // 가격 정보 (할인율 → 원래가격 → 현재가격)
         // 할인율이 있는 경우
@@ -155,23 +147,28 @@ fun GridContent(
 ) {
     if (goods.isEmpty()) return
 
-    // 기본 2행(6개) + 확장된 행 수만큼 표시
     val rowCount = 2 + expandedLines
-    val itemsToShow = minOf(goods.size, rowCount * 3) // 3열 그리드
+    val itemsToShow = minOf(goods.size, rowCount * 3)
     val goodsToShow = goods.take(itemsToShow)
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth(),
-        userScrollEnabled = false // 스크롤 비활성화
-    ) {
-        items(goodsToShow) { good ->
-            GoodItem(
-                good = good,
-                onClick = onGoodClick
-            )
+    Column(modifier = Modifier.fillMaxWidth()) {
+        for (i in 0 until itemsToShow step 3) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                for (j in i until minOf(i + 3, itemsToShow)) {
+                    GoodItem(
+                        good = goodsToShow[j],
+                        onClick = onGoodClick,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+                for (j in 0 until 3 - minOf(3, itemsToShow - i)) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+            if (i < itemsToShow - 3) Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -182,11 +179,11 @@ fun GoodItemPreview() {
     MusinsaTestTheme {
         GoodItem(
             good = Good(
-                linkURL = "https://example.com/good1",
-                thumbnailURL = "https://via.placeholder.com/150",
-                brandName = "예시브랜드",
-                price = 59000,
-                saleRate = 20,
+                linkURL = "https://www.musinsa.com/app/goods/2281818",
+                thumbnailURL = "https://image.msscdn.net/images/goods_img/20211224/2281818/2281818_1_320.jpg",
+                brandName = "아스트랄 프로젝션",
+                price = 39900,
+                saleRate = 50,
                 hasCoupon = true
             )
         )
@@ -200,52 +197,52 @@ fun GridContentPreview() {
         GridContent(
             goods = listOf(
                 Good(
-                    linkURL = "https://example.com/good1",
-                    thumbnailURL = "https://via.placeholder.com/150",
-                    brandName = "브랜드A",
-                    price = 59000,
-                    saleRate = 20,
+                    linkURL = "https://www.musinsa.com/app/goods/2281818",
+                    thumbnailURL = "https://image.msscdn.net/images/goods_img/20211224/2281818/2281818_1_320.jpg",
+                    brandName = "아스트랄 프로젝션",
+                    price = 39900,
+                    saleRate = 50,
                     hasCoupon = true
                 ),
                 Good(
-                    linkURL = "https://example.com/good2",
-                    thumbnailURL = "https://via.placeholder.com/150",
-                    brandName = "브랜드B",
-                    price = 32000,
-                    saleRate = 0,
+                    linkURL = "https://www.musinsa.com/app/goods/2281817",
+                    thumbnailURL = "https://image.msscdn.net/images/goods_img/20211224/2281817/2281817_1_320.jpg",
+                    brandName = "아스트랄 프로젝션",
+                    price = 39900,
+                    saleRate = 45,
                     hasCoupon = false
                 ),
                 Good(
-                    linkURL = "https://example.com/good3",
-                    thumbnailURL = "https://via.placeholder.com/150",
-                    brandName = "브랜드C",
-                    price = 42000,
-                    saleRate = 10,
-                    hasCoupon = false
-                ),
-                Good(
-                    linkURL = "https://example.com/good4",
-                    thumbnailURL = "https://via.placeholder.com/150",
-                    brandName = "브랜드D",
-                    price = 76000,
-                    saleRate = 30,
+                    linkURL = "https://www.musinsa.com/app/goods/2281819",
+                    thumbnailURL = "https://image.msscdn.net/images/goods_img/20211224/2281819/2281819_1_320.jpg",
+                    brandName = "아스트랄 프로젝션",
+                    price = 39900,
+                    saleRate = 65,
                     hasCoupon = true
                 ),
                 Good(
-                    linkURL = "https://example.com/good5",
-                    thumbnailURL = "https://via.placeholder.com/150",
-                    brandName = "브랜드E",
-                    price = 25000,
-                    saleRate = 0,
+                    linkURL = "https://www.musinsa.com/app/goods/2281822",
+                    thumbnailURL = "https://image.msscdn.net/images/goods_img/20211224/2281822/2281822_1_320.jpg",
+                    brandName = "아스트랄 프로젝션",
+                    price = 39900,
+                    saleRate = 75,
                     hasCoupon = false
                 ),
                 Good(
-                    linkURL = "https://example.com/good6",
-                    thumbnailURL = "https://via.placeholder.com/150",
-                    brandName = "브랜드F",
-                    price = 89000,
-                    saleRate = 15,
+                    linkURL = "https://www.musinsa.com/app/goods/2281823",
+                    thumbnailURL = "https://image.msscdn.net/images/goods_img/20211224/2281823/2281823_1_320.jpg",
+                    brandName = "아스트랄 프로젝션",
+                    price = 39900,
+                    saleRate = 35,
                     hasCoupon = true
+                ),
+                Good(
+                    linkURL = "https://www.musinsa.com/app/goods/2281826",
+                    thumbnailURL = "https://image.msscdn.net/images/goods_img/20211224/2281826/2281826_1_320.jpg",
+                    brandName = "아스트랄 프로젝션",
+                    price = 39900,
+                    saleRate = 73,
+                    hasCoupon = false
                 )
             )
         )
